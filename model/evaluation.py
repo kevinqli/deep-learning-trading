@@ -19,6 +19,7 @@ def evaluate_sess(sess, model_spec, num_steps, writer=None, params=None):
         writer: (tf.summary.FileWriter) writer for summaries. Is None if we don't log anything
         params: (Params) hyperparameters
     """
+    profit = model_spec['profit']
     update_metrics = model_spec['update_metrics']
     eval_metrics = model_spec['metrics']
     global_step = tf.train.get_global_step()
@@ -28,14 +29,20 @@ def evaluate_sess(sess, model_spec, num_steps, writer=None, params=None):
     sess.run(model_spec['metrics_init_op'])
 
     # compute metrics over the dataset
+    total_profit = 0.0
     for _ in range(num_steps):
-        sess.run(update_metrics)
+        _, profit_val = sess.run([update_metrics, profit])
+        total_profit += profit_val
+    avg_profit = total_profit / num_steps
+
+    # Get average profit
+    profit_string = "profit: " + str(avg_profit)
 
     # Get the values of the metrics
     metrics_values = {k: v[0] for k, v in eval_metrics.items()}
     metrics_val = sess.run(metrics_values)
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_val.items())
-    logging.info("- Eval metrics: " + metrics_string)
+    logging.info("- Eval metrics: " + metrics_string + " ; " + profit_string)
 
     # Add summaries manually to writer at global_step_val
     if writer is not None:

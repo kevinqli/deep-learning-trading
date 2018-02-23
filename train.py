@@ -7,7 +7,7 @@ import random
 
 import tensorflow as tf
 
-from model.input_fn import input_fn
+from model.input_fn import input_fn, load_prices_and_deltas
 from model.utils import Params
 from model.utils import set_logger
 from model.utils import save_dict_to_json
@@ -16,9 +16,9 @@ from model.training import train_and_evaluate
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--model_dir', default='experiments/test',
+parser.add_argument('--model_dir', default='experiments/base_model',
                     help="Experiment directory containing params.json")
-parser.add_argument('--data_dir', default='data/64x64_SIGNS',
+parser.add_argument('--data_dir', default='data/',
                     help="Directory containing the dataset")
 parser.add_argument('--restore_from', default=None,
                     help="Optional, directory or file containing weights to reload before training")
@@ -43,31 +43,24 @@ if __name__ == '__main__':
     # Set the logger
     set_logger(os.path.join(args.model_dir, 'train.log'))
 
+    # Get paths for dataset
+    path_train_prices = os.path.join(args.data_dir, 'train_prices.txt')
+    path_train_deltas = os.path.join(args.data_dir, 'train_deltas.txt')
+    path_eval_prices = os.path.join(args.data_dir, 'train_prices.txt')
+    path_eval_deltas = os.path.join(args.data_dir, 'train_deltas.txt')
+
     # Create the input data pipeline
     logging.info("Creating the datasets...")
     data_dir = args.data_dir
-    train_data_dir = os.path.join(data_dir, "train_signs")
-    dev_data_dir = os.path.join(data_dir, "dev_signs")
-
-    # Get the filenames from the train and dev sets
-    train_filenames = [os.path.join(train_data_dir, f) for f in os.listdir(train_data_dir)
-                       if f.endswith('.jpg')]
-    eval_filenames = [os.path.join(dev_data_dir, f) for f in os.listdir(dev_data_dir)
-                      if f.endswith('.jpg')]
-
-    # Labels will be between 0 and 5 included (6 classes in total)
-    train_labels = [int(f.split('/')[-1][0]) for f in train_filenames]
-    eval_labels = [int(f.split('/')[-1][0]) for f in eval_filenames]
-
-    # Specify the sizes of the dataset we train on and evaluate on
-    params.train_size = len(train_filenames)
-    params.eval_size = len(eval_filenames)
+    train_prices, train_deltas = load_prices_and_deltas(path_train_prices, path_train_deltas, params)
+    eval_prices, eval_deltas = load_prices_and_deltas(path_eval_prices, path_eval_deltas, params)
 
     # Create the two iterators over the two datasets
-    train_inputs = input_fn(True, train_filenames, train_labels, params)
-    eval_inputs = input_fn(False, eval_filenames, eval_labels, params)
+    train_inputs = input_fn('train', train_prices, train_deltas, params)
+    eval_inputs = input_fn('eval', eval_prices, eval_deltas, params)
+    logging.info("- done.")
 
-    # Define the model
+    # Define the models
     logging.info("Creating the model...")
     train_model_spec = model_fn('train', train_inputs, params)
     eval_model_spec = model_fn('eval', eval_inputs, params, reuse=True)

@@ -22,6 +22,7 @@ def train_sess(sess, model_spec, num_steps, writer, params):
     """
     # Get relevant graph operations or nodes needed for training
     loss = model_spec['loss']
+    profit = model_spec['profit']
     train_op = model_spec['train_op']
     update_metrics = model_spec['update_metrics']
     metrics = model_spec['metrics']
@@ -34,24 +35,34 @@ def train_sess(sess, model_spec, num_steps, writer, params):
 
     # Use tqdm for progress bar
     t = trange(num_steps)
+    total_profit = 0.0
     for i in t:
         # Evaluate summaries for tensorboard only once in a while
         if i % params.save_summary_steps == 0:
             # Perform a mini-batch update
-            _, _, loss_val, summ, global_step_val = sess.run([train_op, update_metrics, loss,
-                                                              summary_op, global_step])
+            _, _, loss_val, profit_val, summ, global_step_val = sess.run([train_op, update_metrics, loss,
+                                                                          profit, summary_op, global_step])
             # Write summaries for tensorboard
             writer.add_summary(summ, global_step_val)
         else:
-            _, _, loss_val = sess.run([train_op, update_metrics, loss])
+            _, _, loss_val, profit_val = sess.run([train_op, update_metrics, loss, profit])
+
+        # Sum up average profit of each batch
+        total_profit += profit_val
         # Log the loss in the tqdm progress bar
         t.set_postfix(loss='{:05.3f}'.format(loss_val))
 
-
+    # Average profits
+    avg_profit = total_profit / num_steps
+    profit_string = "profit: " +  str(avg_profit)
+    
+    # Get metrics
     metrics_values = {k: v[0] for k, v in metrics.items()}
     metrics_val = sess.run(metrics_values)
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_val.items())
-    logging.info("- Train metrics: " + metrics_string)
+
+    # Log training info
+    logging.info("- Train metrics: " + metrics_string + " ; " + profit_string)
 
 
 def train_and_evaluate(train_model_spec, eval_model_spec, model_dir, params, restore_from=None):
@@ -66,8 +77,8 @@ def train_and_evaluate(train_model_spec, eval_model_spec, model_dir, params, res
         restore_from: (string) directory or file containing weights to restore the graph
     """
     # Initialize tf.Saver instances to save weights during training
-    last_saver = tf.train.Saver() # will keep last 5 epochs
-    best_saver = tf.train.Saver(max_to_keep=1)  # only keep 1 best checkpoint (best on eval)
+    #last_saver = tf.train.Saver() # will keep last 5 epochs
+    #best_saver = tf.train.Saver(max_to_keep=1)  # only keep 1 best checkpoint (best on eval)
     begin_at_epoch = 0
 
     with tf.Session() as sess:
@@ -86,7 +97,7 @@ def train_and_evaluate(train_model_spec, eval_model_spec, model_dir, params, res
         train_writer = tf.summary.FileWriter(os.path.join(model_dir, 'train_summaries'), sess.graph)
         eval_writer = tf.summary.FileWriter(os.path.join(model_dir, 'eval_summaries'), sess.graph)
 
-        best_eval_acc = 0.0
+        best_eval_loss = 0.0
         for epoch in range(begin_at_epoch, begin_at_epoch + params.num_epochs):
             # Run one epoch
             logging.info("Epoch {}/{}".format(epoch + 1, begin_at_epoch + params.num_epochs))
@@ -95,26 +106,26 @@ def train_and_evaluate(train_model_spec, eval_model_spec, model_dir, params, res
             train_sess(sess, train_model_spec, num_steps, train_writer, params)
 
             # Save weights
-            last_save_path = os.path.join(model_dir, 'last_weights', 'after-epoch')
-            last_saver.save(sess, last_save_path, global_step=epoch + 1)
+            #last_save_path = os.path.join(model_dir, 'last_weights', 'after-epoch')
+            #last_saver.save(sess, last_save_path, global_step=epoch + 1)
 
             # Evaluate for one epoch on validation set
             num_steps = (params.eval_size + params.batch_size - 1) // params.batch_size
             metrics = evaluate_sess(sess, eval_model_spec, num_steps, eval_writer)
 
             # If best_eval, best_save_path
-            eval_acc = metrics['accuracy']
-            if eval_acc >= best_eval_acc:
-                # Store new best accuracy
-                best_eval_acc = eval_acc
+            eval_loss = metrics['loss']
+            if eval_loss <= best_eval_loss:
+                # Store new best loss
+                best_eval_loss = eval_loss
                 # Save weights
-                best_save_path = os.path.join(model_dir, 'best_weights', 'after-epoch')
-                best_save_path = best_saver.save(sess, best_save_path, global_step=epoch + 1)
-                logging.info("- Found new best accuracy, saving in {}".format(best_save_path))
+                #best_save_path = os.path.join(model_dir, 'best_weights', 'after-epoch')
+                #best_save_path = best_saver.save(sess, best_save_path, global_step=epoch + 1)
+                #logging.info("- Found new best loss, saving in {}".format(best_save_path))
                 # Save best eval metrics in a json file in the model directory
-                best_json_path = os.path.join(model_dir, "metrics_eval_best_weights.json")
-                save_dict_to_json(metrics, best_json_path)
+                #best_json_path = os.path.join(model_dir, "metrics_eval_best_weights.json")
+                #save_dict_to_json(metrics, best_json_path)
 
             # Save latest eval metrics in a json file in the model directory
-            last_json_path = os.path.join(model_dir, "metrics_eval_last_weights.json")
-            save_dict_to_json(metrics, last_json_path)
+            #last_json_path = os.path.join(model_dir, "metrics_eval_last_weights.json")
+            #save_dict_to_json(metrics, last_json_path)
