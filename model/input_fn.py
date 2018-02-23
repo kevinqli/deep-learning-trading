@@ -30,7 +30,7 @@ def load_prices_and_deltas(prices_file, deltas_file, params):
 	return prices, deltas
 
 def input_fn(mode, prices, deltas, params):
-    """Input function 
+    """Input function
 
     Args:
         mode: (bool) 'train', 'eval'
@@ -47,6 +47,8 @@ def input_fn(mode, prices, deltas, params):
     print(params.batch_size)
 
     # Zip the prices and the deltas together
+    print(prices)
+    print(deltas)
     dataset = tf.data.Dataset.zip((prices, deltas))
 
     dataset = (dataset
@@ -61,6 +63,7 @@ def input_fn(mode, prices, deltas, params):
     # Query the output of the iterator for input to the model
     print(len(iterator.get_next()))
     (prices, deltas) = iterator.get_next()
+    prices = tf.Print(prices, [prices, tf.shape(prices), deltas, tf.shape(deltas)])
     init_op = iterator.initializer
 
     # Build and return a dictionary containing the nodes / ops
@@ -69,5 +72,5 @@ def input_fn(mode, prices, deltas, params):
         'deltas': deltas,
         'iterator_init_op': init_op
     }
-    
+
     return inputs
