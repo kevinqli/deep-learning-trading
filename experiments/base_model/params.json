@@ -7,7 +7,7 @@
     
     "learning_rate": 1e-3,
     "batch_size": 5,
-    "num_epochs": 10,
+    "num_epochs": 50,
     "regularizer": 0.1,
     
     "save_summary_steps": 1000

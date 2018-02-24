@@ -43,8 +43,6 @@ def input_fn(mode, prices, deltas, params):
      # Load all the dataset in memory for shuffling if training
     is_training = (mode == 'train')
     buffer_size = params.train_size if is_training else 1
-    print(buffer_size)
-    print(params.batch_size)
 
     # Zip the prices and the deltas together
     dataset = tf.data.Dataset.zip((prices, deltas))
@@ -59,7 +57,6 @@ def input_fn(mode, prices, deltas, params):
     iterator = dataset.make_initializable_iterator()
 
     # Query the output of the iterator for input to the model
-    print(len(iterator.get_next()))
     (prices, deltas) = iterator.get_next()
     init_op = iterator.initializer
 
