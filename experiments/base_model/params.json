@@ -1,6 +1,6 @@
 {
-    "train_size": 20,
-    "eval_size": 20,
+    "train_size": 65555,
+    "eval_size": 65555,
 
     "model_version": "lstm1",
     "lstm_num_units": 60,
