@@ -4,3 +4,4 @@ data
 *.pyc
 *.log
 *summaries
+.DS_Store
