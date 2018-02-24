@@ -5,3 +5,4 @@ data
 *.log
 *summaries
 .DS_Store
+raw_data
