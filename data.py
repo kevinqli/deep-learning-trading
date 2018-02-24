@@ -56,8 +56,9 @@ def split_all_data_and_save(window=WINDOW_SIZE, label='4. close'):
                     all_deltas.append(deltas)
     all_inputs = np.concatenate(all_inputs).reshape(-1, window)
     all_deltas = np.concatenate(all_deltas).reshape(-1, 1)
-    print all_inputs.shape
-    print all_deltas.shape
+    means = np.mean(all_inputs, axis=1, keepdims=True)
+    stds = np.std(all_inputs, axis=1, keepdims=True)
+    all_inputs = (all_inputs - means) / stds
     with open(os.path.join(TRAIN_DATA_DIR, 'prices'), 'w') as f:
         pickle.dump(all_inputs, f)
     with open(os.path.join(TRAIN_DATA_DIR, 'deltas'), 'w') as f:
