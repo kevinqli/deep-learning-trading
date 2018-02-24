@@ -88,8 +88,8 @@ def train_and_evaluate(train_model_spec, eval_model_spec, model_dir, params, res
         restore_from: (string) directory or file containing weights to restore the graph
     """
     # Initialize tf.Saver instances to save weights during training
-    #last_saver = tf.train.Saver() # will keep last 5 epochs
-    #best_saver = tf.train.Saver(max_to_keep=1)  # only keep 1 best checkpoint (best on eval)
+    last_saver = tf.train.Saver() # will keep last 5 epochs
+    best_saver = tf.train.Saver(max_to_keep=1)  # only keep 1 best checkpoint (best on eval)
     begin_at_epoch = 0
 
     with tf.Session() as sess:
@@ -117,8 +117,8 @@ def train_and_evaluate(train_model_spec, eval_model_spec, model_dir, params, res
             train_sess(sess, train_model_spec, num_steps, train_writer, params, model_dir)
 
             # Save weights
-            #last_save_path = os.path.join(model_dir, 'last_weights', 'after-epoch')
-            #last_saver.save(sess, last_save_path, global_step=epoch + 1)
+            last_save_path = os.path.join(model_dir, 'last_weights', 'after-epoch')
+            last_saver.save(sess, last_save_path, global_step=epoch + 1)
 
             # Evaluate for one epoch on validation set
             num_steps = (params.eval_size + params.batch_size - 1) // params.batch_size
@@ -130,13 +130,13 @@ def train_and_evaluate(train_model_spec, eval_model_spec, model_dir, params, res
                 # Store new best loss
                 best_eval_loss = eval_loss
                 # Save weights
-                #best_save_path = os.path.join(model_dir, 'best_weights', 'after-epoch')
-                #best_save_path = best_saver.save(sess, best_save_path, global_step=epoch + 1)
-                #logging.info("- Found new best loss, saving in {}".format(best_save_path))
+                best_save_path = os.path.join(model_dir, 'best_weights', 'after-epoch')
+                best_save_path = best_saver.save(sess, best_save_path, global_step=epoch + 1)
+                logging.info("- Found new best loss, saving in {}".format(best_save_path))
                 # Save best eval metrics in a json file in the model directory
-                #best_json_path = os.path.join(model_dir, "metrics_eval_best_weights.json")
-                #save_dict_to_json(metrics, best_json_path)
+                best_json_path = os.path.join(model_dir, "metrics_eval_best_weights.json")
+                save_dict_to_json(metrics, best_json_path)
 
             # Save latest eval metrics in a json file in the model directory
-            #last_json_path = os.path.join(model_dir, "metrics_eval_last_weights.json")
-            #save_dict_to_json(metrics, last_json_path)
+            last_json_path = os.path.join(model_dir, "metrics_eval_last_weights.json")
+            save_dict_to_json(metrics, last_json_path)
