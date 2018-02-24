@@ -10,7 +10,7 @@ from model.utils import save_dict_to_json
 from model.evaluation import evaluate_sess
 
 
-def train_sess(sess, model_spec, num_steps, writer, params):
+def train_sess(sess, model_spec, num_steps, writer, params, model_dir):
     """Train the model on `num_steps` batches
 
     Args:
@@ -23,6 +23,7 @@ def train_sess(sess, model_spec, num_steps, writer, params):
     # Get relevant graph operations or nodes needed for training
     loss = model_spec['loss']
     profit = model_spec['profit']
+    predictions = model_spec['predictions']
     train_op = model_spec['train_op']
     update_metrics = model_spec['update_metrics']
     metrics = model_spec['metrics']
@@ -35,27 +36,37 @@ def train_sess(sess, model_spec, num_steps, writer, params):
 
     # Use tqdm for progress bar
     t = trange(num_steps)
-    total_profit = 0.0
+    total_profit = 1.0
+    all_preds = []
     for i in t:
         # Evaluate summaries for tensorboard only once in a while
         if i % params.save_summary_steps == 0:
             # Perform a mini-batch update
-            _, _, loss_val, profit_val, summ, global_step_val = sess.run([train_op, update_metrics, loss,
-                                                                          profit, summary_op, global_step])
+            _, _, loss_val, profit_val, preds, summ, global_step_val = sess.run([train_op, update_metrics, loss,
+                                                                                profit, predictions, summary_op, global_step])
             # Write summaries for tensorboard
             writer.add_summary(summ, global_step_val)
         else:
-            _, _, loss_val, profit_val = sess.run([train_op, update_metrics, loss, profit])
+            _, _, loss_val, profit_val, preds = sess.run([train_op, update_metrics, loss, profit, predictions])
 
         # Sum up average profit of each batch
-        total_profit += profit_val
+        total_profit *= (1 + profit_val)
+        # Append predictions of each batch
+        all_preds.append(preds)
         # Log the loss in the tqdm progress bar
         t.set_postfix(loss='{:05.3f}'.format(loss_val))
 
-    # Average profits
-    avg_profit = total_profit / num_steps
+    # Write training predictions to file
+    train_preds_file = os.path.join(model_dir, 'train_preds.txt')
+    with open(train_preds_file, 'w') as tpf:
+        for batch in all_preds:
+            for pred in batch:
+                tpf.write(str(pred) + '\n')
+
+    # Get geometric average of profit
+    avg_profit = total_profit ** (1.0 / num_steps) 
     profit_string = "profit: " +  str(avg_profit)
-    
+
     # Get metrics
     metrics_values = {k: v[0] for k, v in metrics.items()}
     metrics_val = sess.run(metrics_values)
@@ -103,7 +114,7 @@ def train_and_evaluate(train_model_spec, eval_model_spec, model_dir, params, res
             logging.info("Epoch {}/{}".format(epoch + 1, begin_at_epoch + params.num_epochs))
             # Compute number of batches in one epoch (one full pass over the training set)
             num_steps = (params.train_size + params.batch_size - 1) // params.batch_size
-            train_sess(sess, train_model_spec, num_steps, train_writer, params)
+            train_sess(sess, train_model_spec, num_steps, train_writer, params, model_dir)
 
             # Save weights
             #last_save_path = os.path.join(model_dir, 'last_weights', 'after-epoch')
@@ -111,7 +122,7 @@ def train_and_evaluate(train_model_spec, eval_model_spec, model_dir, params, res
 
             # Evaluate for one epoch on validation set
             num_steps = (params.eval_size + params.batch_size - 1) // params.batch_size
-            metrics = evaluate_sess(sess, eval_model_spec, num_steps, eval_writer)
+            metrics = evaluate_sess(sess, eval_model_spec, num_steps, model_dir, writer=eval_writer)
 
             # If best_eval, best_save_path
             eval_loss = metrics['loss']

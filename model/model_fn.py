@@ -30,9 +30,9 @@ def build_model(mode, inputs, params):
         # Compute logits from the output of the LSTM
         hidden_layer_1 = tf.layers.dense(output, 20, activation=tf.tanh)
         #print('after HL1 output shape: ', hidden_layer_1.get_shape())
-        #hidden_layer_2 = tf.layers.dense(hidden_layer_1, 20, activation=tf.tanh)
+        hidden_layer_2 = tf.layers.dense(hidden_layer_1, 20, activation=tf.tanh)
         #print('after HL2 output shape: ', hidden_layer_2.get_shape())
-        predictions = tf.layers.dense(hidden_layer_1, 1, activation=tf.sigmoid)
+        predictions = tf.layers.dense(hidden_layer_2, 1, activation=tf.sigmoid)
         #print('predictions shape: ', predictions.get_shape())
 
     else:

@@ -9,7 +9,7 @@ import tensorflow as tf
 from model.utils import save_dict_to_json
 
 
-def evaluate_sess(sess, model_spec, num_steps, writer=None, params=None):
+def evaluate_sess(sess, model_spec, num_steps, model_dir, writer=None, params=None):
     """Train the model on `num_steps` batches.
 
     Args:
@@ -20,6 +20,7 @@ def evaluate_sess(sess, model_spec, num_steps, writer=None, params=None):
         params: (Params) hyperparameters
     """
     profit = model_spec['profit']
+    predictions = model_spec['predictions']
     update_metrics = model_spec['update_metrics']
     eval_metrics = model_spec['metrics']
     global_step = tf.train.get_global_step()
@@ -29,13 +30,21 @@ def evaluate_sess(sess, model_spec, num_steps, writer=None, params=None):
     sess.run(model_spec['metrics_init_op'])
 
     # compute metrics over the dataset
-    total_profit = 0.0
+    total_profit = 1.0
+    all_preds = []
     for _ in range(num_steps):
-        _, profit_val = sess.run([update_metrics, profit])
-        total_profit += profit_val
-    avg_profit = total_profit / num_steps
+        _, profit_val, preds = sess.run([update_metrics, profit, predictions])
+        total_profit *= (1 + profit_val)
+        all_preds.append(preds)
 
-    # Get average profit
+    eval_preds_file = os.path.join(model_dir, 'eval_preds.txt')
+    with open(eval_preds_file, 'w') as epf:
+        for batch in all_preds:
+            for pred in batch:
+                epf.write(str(pred) + '\n')
+
+    # Get geometric average of profit
+    avg_profit = total_profit ** (1 / num_steps)
     profit_string = "profit: " + str(avg_profit)
 
     # Get the values of the metrics
@@ -79,7 +88,7 @@ def evaluate(model_spec, model_dir, params, restore_from):
 
         # Evaluate
         num_steps = (params.eval_size + params.batch_size - 1) // params.batch_size
-        metrics = evaluate_sess(sess, model_spec, num_steps)
+        metrics = evaluate_sess(sess, model_spec, num_steps, model_dir)
         metrics_name = '_'.join(restore_from.split('/'))
         save_path = os.path.join(model_dir, "metrics_test_{}.json".format(metrics_name))
         save_dict_to_json(metrics, save_path)
