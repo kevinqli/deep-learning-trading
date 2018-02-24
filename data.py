@@ -2,6 +2,7 @@ from alpha_vantage.timeseries import TimeSeries
 import csv
 import cPickle as pickle
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 from pprint import pprint
 
@@ -9,6 +10,7 @@ API_KEY = 'K4GGGZOT5MLPQ97T'
 
 SYM_FILE = 'companylist.csv'
 DATA_DIR = 'data'
+WINDOW_SIZE = 60
 
 TS = TimeSeries(key=API_KEY, output_format='pandas')
 
@@ -25,6 +27,16 @@ def get_syms():
 def load_sym(sym):
     with open(os.path.join(DATA_DIR, sym)) as f:
         return pickle.load(f)
+
+
+def split(prices, window=WINDOW_SIZE):
+    n = len(prices)
+    indices = np.arange(window, n, window)
+    print indices
+    inputs = np.split(prices[:indices[-2]], indices[:-2])
+    deltas = (prices[indices[1:]] - prices[indices[:-1]]) /\
+        prices[indices[:-1]]
+    return inputs, deltas
 
 
 def get_sym_and_save(sym, interval='1min'):
