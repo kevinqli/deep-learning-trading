@@ -1,0 +1,8 @@
+.*.sw*
+data
+.ropeproject
+*.pyc
+*.log
+*summaries
+.DS_Store
+raw_data
