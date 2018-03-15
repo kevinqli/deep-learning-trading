@@ -33,13 +33,13 @@ def build_model(mode, inputs, is_training, params):
         hidden_layer_2 = tf.layers.dense(hidden_layer_1, 30, activation=tf.tanh, kernel_regularizer=tf.contrib.layers.l2_regularizer(params.l2_reg))
         #print('after HL2 output shape: ', hidden_layer_2.get_shape())
         dropout = tf.layers.dropout(hidden_layer_2, rate=params.dropout_rate, training=is_training)
-        predictions = tf.layers.dense(dropout, 1)
-        #print('predictions shape: ', predictions.get_shape())
+        logits = tf.layers.dense(dropout, 1)
+        #print('logits shape: ', logits.get_shape())
 
     else:
         raise NotImplementedError("Unknown model version: {}".format(params.model_version))
 
-    return predictions
+    return logits
 
 
 def model_fn(mode, inputs, params, reuse=False):
@@ -65,17 +65,17 @@ def model_fn(mode, inputs, params, reuse=False):
     with tf.variable_scope('model', reuse=reuse):
         # Compute the output distribution of the model and the predictions
         logits = build_model(is_training, inputs, train_placeholder, params)
-        predictions = tf.reshape(tf.cast(logits > 0.0, logits.dtype), (-1, 1))
+        predictions = tf.reshape(tf.cast(logits > 0.0, tf.int32), (-1, 1))
 
     # Labels (+1 if delta > 0 and 0 otherwise)
-    labels = tf.reshape(tf.cast(deltas > 0.0, deltas.dtype), (-1, 1))
-    
+    labels = tf.reshape(tf.cast(deltas, tf.float32), (-1, 1))
+
     # Define loss, accuracy, and profit
     loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits))
 
-    accuracy = tf.reduce_mean(tf.cast(tf.equal(labels, predictions), tf.float32))
+    accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.cast(labels, tf.int32), predictions), tf.float32))
 
-    profit = tf.multiply(predictions, deltas)
+    profit = tf.multiply(logits, deltas)
     profit = tf.reduce_mean(profit)
 
     # Define training step that minimizes the loss with the Adam optimizer

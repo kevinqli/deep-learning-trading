@@ -1,9 +1,9 @@
 {
     "train_size": 100,
-    "eval_size": 10,
+    "eval_size": 1,
 
     "model_version": "lstm1",
-    "lstm_num_units": 1,
+    "lstm_num_units": 10,
     
     "learning_rate": 1e-3,
     "batch_size": 1,

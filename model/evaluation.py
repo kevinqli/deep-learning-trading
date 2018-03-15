@@ -30,11 +30,11 @@ def evaluate_sess(sess, model_spec, num_steps, epoch, model_dir, writer=None, pa
     sess.run(model_spec['metrics_init_op'])
 
     # compute metrics over the dataset
-    total_profit = 1.0
+    #total_profit = 1.0
     all_preds = []
     for _ in range(num_steps):
         _, profit_val, preds = sess.run([update_metrics, profit, predictions], feed_dict={model_spec['is_training']: True})
-        total_profit *= (1 + profit_val)
+        #total_profit *= (1 + profit_val)
         all_preds.append(preds)
 
     eval_preds_file = os.path.join(model_dir, 'eval_preds.txt')
@@ -44,8 +44,8 @@ def evaluate_sess(sess, model_spec, num_steps, epoch, model_dir, writer=None, pa
                 epf.write(str(pred) + '\n')
 
     # Get geometric average of profit
-    avg_profit = total_profit ** (1 / num_steps)
-    profit_string = "profit: " + str(avg_profit)
+    #avg_profit = total_profit ** (1 / num_steps)
+    profit_string = "profit: " + str('ignore')
 
     # Get the values of the metrics
     metrics_values = {k: v[0] for k, v in eval_metrics.items()}
