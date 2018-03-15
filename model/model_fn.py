@@ -65,10 +65,12 @@ def model_fn(mode, inputs, params, reuse=False):
         predictions = build_model(is_training, inputs, params)
 
     # Define loss and profit
-    loss = - tf.multiply(predictions, deltas) - \
-             tf.scalar_mul(tf.constant(params.regularizer, dtype=tf.float32), 
-                           tf.log(tf.constant(1.0, dtype=tf.float32) - predictions))
-    loss = tf.reduce_mean(loss)
+    #loss = - tf.multiply(predictions, deltas) - \
+    #         tf.scalar_mul(tf.constant(params.regularizer, dtype=tf.float32),
+    #                       tf.log(tf.constant(1.0, dtype=tf.float32) - predictions))
+    #loss = tf.reduce_mean(loss)
+
+    loss = tf.reduce_mean(tf.nn.l2_loss(predictions - deltas))
 
     profit = tf.multiply(predictions, deltas)
     profit = tf.reduce_mean(profit)

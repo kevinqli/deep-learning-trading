@@ -11,7 +11,7 @@ API_KEY = 'K4GGGZOT5MLPQ97T'
 SYM_FILE = 'companylist.csv'
 RAW_DATA_DIR = 'raw_data'
 TRAIN_DATA_DIR = 'data'
-WINDOW_SIZE = 60
+WINDOW_SIZE = 30
 
 TS = TimeSeries(key=API_KEY, output_format='pandas')
 
@@ -35,8 +35,7 @@ def split(prices, window=WINDOW_SIZE):
     n = len(prices)
     indices = np.arange(window, n, window)
     inputs = np.split(prices[:indices[-2]], indices[:-2])
-    deltas = (prices[indices[1:]] - prices[indices[:-1]]) /\
-        prices[indices[:-1]]
+    deltas = prices[indices[1:]] > prices[indices[:-1]]
     assert len(inputs) == len(deltas)
     return inputs, deltas
 
@@ -52,13 +51,20 @@ def split_all_data_and_save(window=WINDOW_SIZE, label='4. close'):
                 if len(prices) > 2 * window:
                     print 'Loading data from symbol %s...' % sym
                     inputs, deltas = split(prices, window=window)
+                    assert (np.std(inputs) != 0).all()
+                    assert not np.isnan(inputs).any()
                     all_inputs.extend(inputs)
                     all_deltas.append(deltas)
     all_inputs = np.concatenate(all_inputs).reshape(-1, window)
     all_deltas = np.concatenate(all_deltas).reshape(-1, 1)
+    assert all_inputs.shape[0] == all_deltas.shape[0]
+    assert all_inputs.shape[1] == window
     means = np.mean(all_inputs, axis=1, keepdims=True)
     stds = np.std(all_inputs, axis=1, keepdims=True)
-    all_inputs = (all_inputs - means) / stds
+    assert means.shape[0] == all_inputs.shape[0]
+    assert stds.shape[0] == all_inputs.shape[0]
+    all_inputs = np.divide((all_inputs - means), stds,
+                           out=np.zeros_like(all_inputs), where=stds!=0)
     with open(os.path.join(TRAIN_DATA_DIR, 'prices'), 'w') as f:
         pickle.dump(all_inputs, f)
     with open(os.path.join(TRAIN_DATA_DIR, 'deltas'), 'w') as f:
@@ -97,13 +103,12 @@ def split_train_dev_test_to_file():
                   os.path.join(TRAIN_DATA_DIR, 'test_deltas.txt'))
 
 
-def get_sym_and_save(sym, interval='1min'):
+def get_sym_and_save(sym):
     if os.path.exists(os.path.join(RAW_DATA_DIR, sym)):
         print 'Symbol %s already downloaded. Skipping...' % sym
         return
     try:
-        data, metadata = TS.get_intraday(symbol=sym, interval=interval,
-                                         outputsize='full')
+        data, metadata = TS.get_daily(symbol=sym, outputsize='full')
     except ValueError:
         print 'Symbol %s does not exist! Skipping...' % sym
         with open(os.path.join(RAW_DATA_DIR, sym), 'w') as f:
@@ -126,6 +131,7 @@ def get_all_raw_data(interval='1min'):
 def main():
     get_all_raw_data()
     split_all_data_and_save()
+    split_train_dev_test_to_file()
 
 
 if __name__ == '__main__':
