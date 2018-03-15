@@ -9,7 +9,7 @@ import tensorflow as tf
 from model.utils import save_dict_to_json
 
 
-def evaluate_sess(sess, model_spec, num_steps, model_dir, writer=None, params=None):
+def evaluate_sess(sess, model_spec, num_steps, epoch, model_dir, writer=None, params=None):
     """Train the model on `num_steps` batches.
 
     Args:
@@ -26,14 +26,14 @@ def evaluate_sess(sess, model_spec, num_steps, model_dir, writer=None, params=No
     global_step = tf.train.get_global_step()
 
     # Load the evaluation dataset into the pipeline and initialize the metrics init op
-    sess.run(model_spec['iterator_init_op'])
+    sess.run(model_spec['iterator_init_op'], feed_dict={model_spec['seed']: epoch})
     sess.run(model_spec['metrics_init_op'])
 
     # compute metrics over the dataset
     total_profit = 1.0
     all_preds = []
     for _ in range(num_steps):
-        _, profit_val, preds = sess.run([update_metrics, profit, predictions])
+        _, profit_val, preds = sess.run([update_metrics, profit, predictions], feed_dict={model_spec['is_training']: True})
         total_profit *= (1 + profit_val)
         all_preds.append(preds)
 
@@ -50,7 +50,7 @@ def evaluate_sess(sess, model_spec, num_steps, model_dir, writer=None, params=No
     # Get the values of the metrics
     metrics_values = {k: v[0] for k, v in eval_metrics.items()}
     metrics_val = sess.run(metrics_values)
-    metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_val.items())
+    metrics_string = " ; ".join("{}: {:05.6f}".format(k, v) for k, v in metrics_val.items())
     logging.info("- Eval metrics: " + metrics_string + " ; " + profit_string)
 
     # Add summaries manually to writer at global_step_val
