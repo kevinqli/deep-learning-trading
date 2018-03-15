@@ -5,3 +5,7 @@
 *summaries
 .DS_Store
 raw_data
+*weights/
+*.txt
+*.json
+data/*
