@@ -8,4 +8,4 @@ raw_data
 *weights/
 *.txt
 *.json
-data/*
+data

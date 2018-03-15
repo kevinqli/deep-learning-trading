@@ -23,7 +23,7 @@ def load_prices_and_deltas(prices_file, deltas_file, params):
 
 	with open(deltas_file, 'r') as df:
 		for line in df:
-			deltas.append(float(line.strip()))
+			deltas.append(bool(line.strip()))
 
 	prices = tf.data.Dataset.from_tensor_slices(tf.constant(prices, dtype=tf.float32))
 	deltas = tf.data.Dataset.from_tensor_slices(tf.constant(deltas, dtype=tf.float32))
