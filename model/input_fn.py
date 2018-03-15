@@ -14,7 +14,6 @@ def load_prices_and_deltas(prices_file, deltas_file, params):
 	Returns:
 		prices, deltas: (tf.Dataset) yielding list of stock prices, lengths, and deltas
 	"""
-
 	prices, deltas = [], []
 
 	with open(prices_file, 'r') as pf:
@@ -47,8 +46,9 @@ def input_fn(mode, prices, deltas, params):
     # Zip the prices and the deltas together
     dataset = tf.data.Dataset.zip((prices, deltas))
 
+    seed = tf.placeholder(tf.int64, shape=())
     dataset = (dataset
-        .shuffle(buffer_size=buffer_size)
+        .shuffle(buffer_size=buffer_size, seed=seed)
         .batch(params.batch_size)
         .prefetch(1)  # make sure you always have one batch ready to serve
     )
@@ -64,7 +64,8 @@ def input_fn(mode, prices, deltas, params):
     inputs = {
         'prices': prices,
         'deltas': deltas,
-        'iterator_init_op': init_op
+        'iterator_init_op': init_op,
+        'seed': seed
     }
 
     return inputs

@@ -1,14 +1,16 @@
 {
-    "train_size": 65555,
-    "eval_size": 3642,
+    "train_size": 100,
+    "eval_size": 10,
 
     "model_version": "lstm1",
-    "lstm_num_units": 60,
+    "lstm_num_units": 1,
     
     "learning_rate": 1e-3,
-    "batch_size": 64,
-    "num_epochs": 30,
-    "regularizer": 0.1,
+    "batch_size": 1,
+    "num_epochs": 50,
+    "regularizer": 1e-7,
+    "l2_reg": 0.0,
+    "dropout_rate": 0.0,
     
     "save_summary_steps": 1000
 }
