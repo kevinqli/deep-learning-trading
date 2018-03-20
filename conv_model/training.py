@@ -1,7 +1,6 @@
 """Tensorflow utility functions for training"""
 
 import logging
-import numpy as np
 import os
 
 from tqdm import trange
@@ -36,9 +35,6 @@ def train_sess(sess, model_spec, num_steps, epoch, writer, params, model_dir):
     sess.run(model_spec['iterator_init_op'], feed_dict={model_spec['seed']: epoch})
     sess.run(model_spec['metrics_init_op'])
 
-    # Generate confusion matrix
-    conf_matrix = np.zeros((2, 2), dtype=np.int32)
-
     # Use tqdm for progress bar
     t = trange(num_steps)
     #total_profit = 1.0
@@ -62,10 +58,6 @@ def train_sess(sess, model_spec, num_steps, epoch, writer, params, model_dir):
         all_preds.append(preds)
         # Log the loss in the tqdm progress bar
         t.set_postfix(loss='{:05.3f}'.format(loss_val))
-        for j in range(len(preds)):
-            # print(conf_matrix)
-            # print(preds[j], int(label_vals[j]))
-            conf_matrix[preds[j][0]][int(label_vals[j])] += 1
         #print(preds)
         #print(label_vals)
         # print(loss_val)
@@ -88,8 +80,6 @@ def train_sess(sess, model_spec, num_steps, epoch, writer, params, model_dir):
 
     # Log training info
     logging.info("- Train metrics: " + metrics_string + " ; " + profit_string)
-
-    return conf_matrix
 
 
 def train_and_evaluate(train_model_spec, eval_model_spec, model_dir, params, restore_from=None):
@@ -124,17 +114,13 @@ def train_and_evaluate(train_model_spec, eval_model_spec, model_dir, params, res
         train_writer = tf.summary.FileWriter(os.path.join(model_dir, 'train_summaries'), sess.graph)
         eval_writer = tf.summary.FileWriter(os.path.join(model_dir, 'eval_summaries'), sess.graph)
 
-        train_conf_matrix = np.zeros((2, 2), dtype=np.int32)
-        eval_conf_matrix = np.zeros((2, 2), dtype=np.int32)
-
         best_eval_acc = 0.0
         for epoch in range(begin_at_epoch, begin_at_epoch + params.num_epochs):
             # Run one epoch
             logging.info("Epoch {}/{}".format(epoch + 1, begin_at_epoch + params.num_epochs))
             # Compute number of batches in one epoch (one full pass over the training set)
             num_steps = (params.train_size + params.batch_size - 1) // params.batch_size
-            train_conf_matrix = train_sess(sess, train_model_spec, num_steps, epoch, train_writer, params, model_dir)
-            logging.info("- Current Training Confusion Matrix:\n {}".format(train_conf_matrix))
+            train_sess(sess, train_model_spec, num_steps, epoch, train_writer, params, model_dir)
 
             # Save weights
             last_save_path = os.path.join(model_dir, 'last_weights', 'after-epoch')
@@ -142,12 +128,11 @@ def train_and_evaluate(train_model_spec, eval_model_spec, model_dir, params, res
 
             # Evaluate for one epoch on validation set
             num_steps = (params.eval_size + params.batch_size - 1) // params.batch_size
-            metrics, cur_eval_matrix = evaluate_sess(sess, eval_model_spec, num_steps, epoch, model_dir, writer=eval_writer)
-            logging.info("- Current Evaluation Confusion Matrix:\n {}".format(cur_eval_matrix))
+            metrics = evaluate_sess(sess, eval_model_spec, num_steps, epoch, model_dir, writer=eval_writer)
 
             # If best_eval, best_save_path
             eval_acc = metrics['accuracy']
-            if eval_acc >= best_eval_acc:
+            if eval_acc <= best_eval_acc:
                 # Store new best accuracy
                 best_eval_acc = eval_acc
                 # Save weights
@@ -157,12 +142,7 @@ def train_and_evaluate(train_model_spec, eval_model_spec, model_dir, params, res
                 # Save best eval metrics in a json file in the model directory
                 best_json_path = os.path.join(model_dir, "metrics_eval_best_weights.json")
                 save_dict_to_json(metrics, best_json_path)
-                # Store best validation confusion matrix
-                eval_conf_matrix = cur_eval_matrix
 
             # Save latest eval metrics in a json file in the model directory
             last_json_path = os.path.join(model_dir, "metrics_eval_last_weights.json")
             save_dict_to_json(metrics, last_json_path)
-
-        logging.info("- Best Evaluation Accuracy {:.3f}".format(best_eval_acc))
-        logging.info("- Evaluation Confusion Matrix:\n {}".format(eval_conf_matrix))        
