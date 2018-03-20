@@ -6,7 +6,7 @@
     "lstm_num_units": 30,
     "lstm_layers": 2,
     
-    "learning_rate": 1.2e-3,
+    "learning_rate": 1.2e-4,
     "batch_size": 64,
     "num_epochs": 50,
     "l2_reg": 0.0,
