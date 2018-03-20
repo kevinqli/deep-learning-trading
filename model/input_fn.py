@@ -3,6 +3,7 @@
 import numpy as np
 import tensorflow as tf
 
+NUM_FEATURES = 30
 
 def load_prices_and_deltas(prices_file, deltas_file, params):
     """Create tf.data instance from txt files
@@ -19,7 +20,12 @@ def load_prices_and_deltas(prices_file, deltas_file, params):
 
     with open(prices_file, 'r') as pf:
         for line in pf:
-            prices.append([[float(num)] for num in line.strip().split(' ')])
+            nums = [float(num) for num in line.strip().split(' ')]
+            features = []
+            for i in range(0, len(nums), NUM_FEATURES):
+                cur = nums[i:i + NUM_FEATURES]
+                features.append(cur)
+            prices.append(features)
 
     with open(deltas_file, 'r') as df:
         for line in df:

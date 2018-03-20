@@ -17,11 +17,15 @@ def build_model(mode, inputs, is_training, params):
     """
 
     prices = inputs['prices']
-    #print('prices shape: ', prices.get_shape())
+    print('prices shape: ', prices.get_shape())
 
+    def lstm_cell():
+        return tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units, forget_bias=1.0)
+
+    # Shallow LSTM model 
     if params.model_version == 'lstm1':
-        # Apply LSTM over the prices
-        lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units, forget_bias=1.0)
+        # Apply LSTM over the price features
+        lstm_cell = lstm_cell()
         output, _ = tf.nn.dynamic_rnn(lstm_cell, prices, dtype=tf.float32)
         print('after rnn output shape: ', output.get_shape())
         output = tf.reshape(output, (-1, output.get_shape()[1]*output.get_shape()[2]))
@@ -29,12 +33,30 @@ def build_model(mode, inputs, is_training, params):
 
         # Compute logits from the output of the LSTM
         hidden_layer_1 = tf.layers.dense(output, 50, activation=tf.tanh, kernel_regularizer=tf.contrib.layers.l2_regularizer(params.l2_reg))
-        #print('after HL1 output shape: ', hidden_layer_1.get_shape())
+        print('after HL1 output shape: ', hidden_layer_1.get_shape())
         hidden_layer_2 = tf.layers.dense(hidden_layer_1, 30, activation=tf.tanh, kernel_regularizer=tf.contrib.layers.l2_regularizer(params.l2_reg))
-        #print('after HL2 output shape: ', hidden_layer_2.get_shape())
+        print('after HL2 output shape: ', hidden_layer_2.get_shape())
         dropout = tf.layers.dropout(hidden_layer_2, rate=params.dropout_rate, training=is_training) 
         logits = tf.layers.dense(dropout, 1)
-        #print('logits shape: ', logits.get_shape())
+        print('logits shape: ', logits.get_shape())
+
+    # Deep LSTM model
+    elif params.model_version == 'lstm2':
+        # Apply LSTM over the price features
+        stacked_lstm = tf.contrib.rnn.MultiRNNCell([lstm_cell() for _ in range(params.lstm_layers)])
+        output, _ = tf.nn.dynamic_rnn(stacked_lstm, prices, dtype=tf.float32)
+        print('after rnn output shape: ', output.get_shape())
+        output = tf.reshape(output, (-1, output.get_shape()[1]*output.get_shape()[2]))
+        print('after reshaping rnn output shape: ', output.get_shape())
+
+        # Compute logits from the output of the LSTM
+        hidden_layer_1 = tf.layers.dense(output, 50, activation=tf.tanh, kernel_regularizer=tf.contrib.layers.l2_regularizer(params.l2_reg))
+        print('after HL1 output shape: ', hidden_layer_1.get_shape())
+        hidden_layer_2 = tf.layers.dense(hidden_layer_1, 30, activation=tf.tanh, kernel_regularizer=tf.contrib.layers.l2_regularizer(params.l2_reg))
+        print('after HL2 output shape: ', hidden_layer_2.get_shape())
+        dropout = tf.layers.dropout(hidden_layer_2, rate=params.dropout_rate, training=is_training) 
+        logits = tf.layers.dense(dropout, 1)
+        print('logits shape: ', logits.get_shape())
 
     else:
         raise NotImplementedError("Unknown model version: {}".format(params.model_version))

@@ -13,7 +13,8 @@ train_deltas_path = DIR + 'train_deltas.txt'
 val_prices_path = DIR + 'val_prices.txt'
 val_deltas_path = DIR + 'val_deltas.txt'
 
-NUM_FEATURES = 1
+NUM_FEATURES = 30
+MODELS = ["RF", "RC", "GB"]
 
 # Return 3-d np array of inputs and 1-d np array of labels
 def get_inputs_and_labels():
@@ -39,29 +40,35 @@ def gradient_boosting_classifier(features, target):
     return clf
 
 # Output training and validation accuracies 
-def train_model(X_train, y_train, X_val, y_val):
-    if model == "Random Forest":
+def train_model(X_train, y_train, X_val, y_val, model):
+    if model == "RF":
         trained_model = random_forest_classifier(X_train, y_train)
         predictions = trained_model.predict(X_val)
         mean_train_acc = accuracy_score(y_train, trained_model.predict(X_train))
         mean_val_acc = accuracy_score(y_val, predictions)
-    elif model == "Ridge Classifier":
+
+    elif model == "RC":
         train_model = ridge_classifier(X_train, y_train)
         mean_train_acc = clf.score(X_train, y_train)
         mean_val_acc = clf.score(X_val, y_val)
-    elif model == "Gradient Boosting":
+
+    elif model == "GB":
         trained_model = gradient_boosting_classifier(X_train, y_train)
         predictions = trained_model.predict(X_val)
         mean_train_acc = accuracy_score(y_train, trained_model.predict(X_train))
         mean_val_acc = accuracy_score(y_val, predictions)
+
     else:
         print "Model not found"
+
+    print 'Model: %s' % model
     print 'train acc: %f, val acc: %f' % (mean_train_acc, mean_val_acc)
 
 def main():
     X_train, y_train, X_val, y_val = get_inputs_and_labels()
     print 'Predicting stock trends...'
-    train_model(X_train, y_train, X_val, y_val)
+    for model in models:
+        train_model(X_train, y_train, X_val, y_val, model)
 
 if __name__ == '__main__':
     main()
