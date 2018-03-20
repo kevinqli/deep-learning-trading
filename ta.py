@@ -2,11 +2,6 @@ import numpy
 import pandas as pd
 import math as m
 
-
-
-
-
-
 #Moving Average
 def MA(df, n):
     MA = pd.Series(pd.rolling_mean(df['Close'], n), name = 'MA_' + str(n))

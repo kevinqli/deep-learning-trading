@@ -57,6 +57,8 @@ def KELCH(df):
 indicators = [MA5, MA10, EMA20, ROC, ATR, BBANDS, ta.PPSR, ta.STOK,
               ADX, MACD, RSI, MFI, CCI, KELCH]
 
+NB_FEATURES = 30
+
 API_KEY = 'K4GGGZOT5MLPQ97T'
 
 SYM_FILE = 'companylist.csv'
@@ -103,7 +105,7 @@ def preprocess(data):
     return data
 
 
-def split_all_data_and_save(window=WINDOW_SIZE):
+def split_all_data_and_save(window=WINDOW_SIZE, nb_features=NB_FEATURES):
     all_inputs = []
     all_labels = []
     for sym in os.listdir(RAW_DATA_DIR):
@@ -116,10 +118,11 @@ def split_all_data_and_save(window=WINDOW_SIZE):
                     inputs, labels = split(inputs, window=window)
                     all_inputs.extend(inputs)
                     all_labels.append(labels)
-    all_inputs = np.concatenate(all_inputs).reshape(-1, window)
+    all_inputs = np.concatenate(all_inputs).reshape(-1, window, nb_features)
     all_labels = np.concatenate(all_labels).reshape(-1, 1)
+    print all_inputs.shape
+    print all_labels.shape
     assert all_inputs.shape[0] == all_labels.shape[0]
-    assert all_inputs.shape[1] == window
     with open(os.path.join(TRAIN_DATA_DIR, 'all_inputs.pkl'), 'wb') as f:
         pickle.dump(all_inputs, f)
     with open(os.path.join(TRAIN_DATA_DIR, 'all_labels.pkl'), 'wb') as f:
@@ -129,10 +132,10 @@ def split_all_data_and_save(window=WINDOW_SIZE):
 
 def split_train_dev_test_to_file(inputs=None, labels=None):
     if inputs is None:
-        with open(os.path.join(TRAIN_DATA_DIR, 'all_inputs.pkl')) as f:
+        with open(os.path.join(TRAIN_DATA_DIR, 'all_inputs.pkl'), 'rb') as f:
             inputs = pickle.load(f)
     if labels is None:
-        with open(os.path.join(TRAIN_DATA_DIR, 'all_labels.pkl')) as f:
+        with open(os.path.join(TRAIN_DATA_DIR, 'all_labels.pkl'), 'rb') as f:
             labels = pickle.load(f)
     n = inputs.shape[0]
     print(inputs.shape)
@@ -142,15 +145,15 @@ def split_train_dev_test_to_file(inputs=None, labels=None):
         indices[:int(0.9*n)], indices[int(0.9*n):int(0.95*n)], \
         indices[int(0.95*n):]
     pickle.dump(inputs[train_idx, :],
-                open(os.path.join(TRAIN_DATA_DIR, 'train_inputs.pkl'), 'rb'))
+                open(os.path.join(TRAIN_DATA_DIR, 'train_inputs.pkl'), 'wb'))
     pickle.dump(inputs[eval_idx, :],
-                open(os.path.join(TRAIN_DATA_DIR, 'eval_inputs.pkl'), 'rb'))
+                open(os.path.join(TRAIN_DATA_DIR, 'eval_inputs.pkl'), 'wb'))
     pickle.dump(inputs[test_idx, :],
-                open(os.path.join(TRAIN_DATA_DIR, 'test_inputs.pkl'), 'rb'))
+                open(os.path.join(TRAIN_DATA_DIR, 'test_inputs.pkl'), 'wb'))
     pickle.dump(labels[train_idx, :],
-                open(os.path.join(TRAIN_DATA_DIR, 'train_labels.pkl'), 'rb'))
+                open(os.path.join(TRAIN_DATA_DIR, 'train_labels.pkl'), 'wb'))
     pickle.dump(labels[eval_idx, :],
-                open(os.path.join(TRAIN_DATA_DIR, 'eval_labels.txt'), 'rb'))
+                open(os.path.join(TRAIN_DATA_DIR, 'eval_labels.txt'), 'wb'))
     pickle.dump(labels[test_idx, :],
                 open(os.path.join(TRAIN_DATA_DIR, 'test_labels.pkl'), 'rb'))
 
@@ -181,8 +184,8 @@ def get_all_raw_data(interval='1min'):
 
 
 def main():
-    get_all_raw_data()
-    split_all_data_and_save()
+    # get_all_raw_data()
+    # split_all_data_and_save()
     split_train_dev_test_to_file()
 
 
