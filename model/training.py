@@ -37,7 +37,7 @@ def train_sess(sess, model_spec, num_steps, epoch, writer, params, model_dir):
 
     # Use tqdm for progress bar
     t = trange(num_steps)
-    total_profit = 1.0
+    #total_profit = 1.0
     all_preds = []
     for i in t:
         # Evaluate summaries for tensorboard only once in a while
@@ -53,13 +53,13 @@ def train_sess(sess, model_spec, num_steps, epoch, writer, params, model_dir):
                                                                         feed_dict={model_spec['is_training']: True})
 
         # Sum up average profit of each batch
-        total_profit *= (1 + profit_val)
+        #total_profit *= (1 + profit_val)
         # Append predictions of each batch
         all_preds.append(preds)
         # Log the loss in the tqdm progress bar
         t.set_postfix(loss='{:05.3f}'.format(loss_val))
-        # print(preds)
-        # print(label_vals)
+        #print(preds)
+        #print(label_vals)
         # print(loss_val)
 
     # Write training predictions to file
@@ -70,8 +70,8 @@ def train_sess(sess, model_spec, num_steps, epoch, writer, params, model_dir):
                 tpf.write(str(pred) + '\n')
 
     # Get geometric average of profit
-    avg_profit = total_profit ** (1.0 / num_steps) 
-    profit_string = "profit: " +  str(avg_profit)
+    #avg_profit = total_profit ** (1.0 / num_steps)
+    profit_string = "profit: " +  str('ignore')
 
     # Get metrics
     metrics_values = {k: v[0] for k, v in metrics.items()}
