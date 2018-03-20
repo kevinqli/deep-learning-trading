@@ -155,7 +155,7 @@ def split_train_dev_test_to_file(inputs=None, labels=None):
     pickle.dump(labels[eval_idx, :],
                 open(os.path.join(TRAIN_DATA_DIR, 'eval_labels.txt'), 'wb'))
     pickle.dump(labels[test_idx, :],
-                open(os.path.join(TRAIN_DATA_DIR, 'test_labels.pkl'), 'rb'))
+                open(os.path.join(TRAIN_DATA_DIR, 'test_labels.pkl'), 'wb'))
 
 
 def get_sym_and_save(sym):
@@ -184,8 +184,10 @@ def get_all_raw_data(interval='1min'):
 
 
 def main():
-    # get_all_raw_data()
-    # split_all_data_and_save()
+    if not os.path.exists(os.path.join(TRAIN_DATA_DIR, 'all_inputs.pkl')) \
+        or not os.path.exists(os.path.join(TRAIN_DATA_DIR, 'all_labels.pkl')):
+	    get_all_raw_data()
+	    split_all_data_and_save()
     split_train_dev_test_to_file()
 
 

@@ -44,10 +44,10 @@ if __name__ == '__main__':
     set_logger(os.path.join(args.model_dir, 'train.log'))
 
     # Get paths for dataset
-    path_train_prices = os.path.join(args.data_dir, 'train_prices.txt')
-    path_train_deltas = os.path.join(args.data_dir, 'train_deltas.txt')
-    path_eval_prices = os.path.join(args.data_dir, 'eval_prices.txt')
-    path_eval_deltas = os.path.join(args.data_dir, 'eval_deltas.txt')
+    path_train_prices = os.path.join(args.data_dir, 'train_prices.pkl')
+    path_train_deltas = os.path.join(args.data_dir, 'train_deltas.pkl')
+    path_eval_prices = os.path.join(args.data_dir, 'eval_prices.pkl')
+    path_eval_deltas = os.path.join(args.data_dir, 'eval_deltas.pkl')
 
     # Create the input data pipeline
     logging.info("Creating the datasets...")
