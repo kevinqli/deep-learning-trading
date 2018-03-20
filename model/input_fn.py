@@ -1,11 +1,12 @@
 """Create the input data pipeline using `tf.data`"""
 
 import numpy as np
+import pickle
 import tensorflow as tf
 
 NUM_FEATURES = 30
 
-def load_prices_and_deltas(prices_file, deltas_file, params):
+def load_prices_and_deltas(inputs_file, labels_file, params):
     """Create tf.data instance from txt files
     
     Args:
@@ -16,24 +17,11 @@ def load_prices_and_deltas(prices_file, deltas_file, params):
     Returns:
         prices, deltas: (tf.Dataset) yielding list of stock prices, lengths, and deltas
     """
-    prices, deltas = [], []
-
-    with open(prices_file, 'r') as pf:
-        for line in pf:
-            nums = [float(num) for num in line.strip().split(' ')]
-            features = []
-            for i in range(0, len(nums), NUM_FEATURES):
-                cur = nums[i:i + NUM_FEATURES]
-                features.append(cur)
-            prices.append(features)
-
-    with open(deltas_file, 'r') as df:
-        for line in df:
-            deltas.append(line.strip() == 'True')
-
-    prices = tf.data.Dataset.from_tensor_slices(tf.constant(prices, dtype=tf.float32))
-    deltas = tf.data.Dataset.from_tensor_slices(tf.constant(deltas, dtype=tf.float32))
-    return prices, deltas
+    inputs = pickle.load(open(inputs_file, 'rb'))
+    labels = pickle.load(open(labels_file, 'rb'))
+    inputs = tf.data.Dataset.from_tensor_slices(tf.constant(inputs, dtype=tf.float32))
+    labels = tf.data.Dataset.from_tensor_slices(tf.constant(labels, dtype=tf.float32))
+    return inputs, labels
 
 def input_fn(mode, prices, deltas, params):
     """Input function

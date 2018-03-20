@@ -153,7 +153,7 @@ def split_train_dev_test_to_file(inputs=None, labels=None):
     pickle.dump(labels[train_idx, :],
                 open(os.path.join(TRAIN_DATA_DIR, 'train_labels.pkl'), 'wb'))
     pickle.dump(labels[eval_idx, :],
-                open(os.path.join(TRAIN_DATA_DIR, 'eval_labels.txt'), 'wb'))
+                open(os.path.join(TRAIN_DATA_DIR, 'eval_labels.pkl'), 'wb'))
     pickle.dump(labels[test_idx, :],
                 open(os.path.join(TRAIN_DATA_DIR, 'test_labels.pkl'), 'wb'))
 
