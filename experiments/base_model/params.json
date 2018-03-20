@@ -1,13 +1,13 @@
 {
-    "train_size": 236956,
-    "eval_size": 13164,
+    "train_size": 113908,
+    "eval_size": 6328,
 
     "model_version": "lstm2",
     "lstm_num_units": 30,
     "lstm_layers": 2,
     
     "learning_rate": 1.2e-4,
-    "batch_size": 64,
+    "batch_size": 512,
     "num_epochs": 50,
     "l2_reg": 0.0,
     "dropout_rate": 0.0,
