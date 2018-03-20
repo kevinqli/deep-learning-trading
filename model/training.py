@@ -123,8 +123,8 @@ def train_and_evaluate(train_model_spec, eval_model_spec, model_dir, params, res
             train_sess(sess, train_model_spec, num_steps, epoch, train_writer, params, model_dir)
 
             # Save weights
-            #last_save_path = os.path.join(model_dir, 'last_weights', 'after-epoch')
-            #last_saver.save(sess, last_save_path, global_step=epoch + 1)
+            last_save_path = os.path.join(model_dir, 'last_weights', 'after-epoch')
+            last_saver.save(sess, last_save_path, global_step=epoch + 1)
 
             # Evaluate for one epoch on validation set
             num_steps = (params.eval_size + params.batch_size - 1) // params.batch_size
@@ -136,13 +136,13 @@ def train_and_evaluate(train_model_spec, eval_model_spec, model_dir, params, res
                 # Store new best accuracy
                 best_eval_acc = eval_acc
                 # Save weights
-                #best_save_path = os.path.join(model_dir, 'best_weights', 'after-epoch')
-                #best_save_path = best_saver.save(sess, best_save_path, global_step=epoch + 1)
-                #logging.info("- Found new best loss, saving in {}".format(best_save_path))
+                best_save_path = os.path.join(model_dir, 'best_weights', 'after-epoch')
+                best_save_path = best_saver.save(sess, best_save_path, global_step=epoch + 1)
+                logging.info("- Found new best loss, saving in {}".format(best_save_path))
                 # Save best eval metrics in a json file in the model directory
-                #best_json_path = os.path.join(model_dir, "metrics_eval_best_weights.json")
-                #save_dict_to_json(metrics, best_json_path)
+                best_json_path = os.path.join(model_dir, "metrics_eval_best_weights.json")
+                save_dict_to_json(metrics, best_json_path)
 
             # Save latest eval metrics in a json file in the model directory
-            #last_json_path = os.path.join(model_dir, "metrics_eval_last_weights.json")
-            #save_dict_to_json(metrics, last_json_path)
+            last_json_path = os.path.join(model_dir, "metrics_eval_last_weights.json")
+            save_dict_to_json(metrics, last_json_path)
