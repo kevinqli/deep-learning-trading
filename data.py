@@ -97,7 +97,7 @@ def split(inputs, window=WINDOW_SIZE):
 def preprocess(data):
     data = data.rename(index=str, columns={x: x[3:].capitalize() for x in
                                            data.columns})
-    data['Volume'] = np.log(data['Volume'])
+    data['Volume'] = np.log(1 + data['Volume'])
     data.index = range(len(data.index))
     for indicator in indicators:
         data = indicator(data)
@@ -120,8 +120,8 @@ def split_all_data_and_save(window=WINDOW_SIZE, nb_features=NB_FEATURES):
                     all_labels.append(labels)
     all_inputs = np.concatenate(all_inputs).reshape(-1, window, nb_features)
     all_labels = np.concatenate(all_labels).reshape(-1, 1)
-    print all_inputs.shape
-    print all_labels.shape
+    print(all_inputs.shape)
+    print(all_labels.shape)
     assert all_inputs.shape[0] == all_labels.shape[0]
     with open(os.path.join(TRAIN_DATA_DIR, 'all_inputs.pkl'), 'wb') as f:
         pickle.dump(all_inputs, f)
@@ -185,9 +185,10 @@ def get_all_raw_data(interval='1min'):
 
 def main():
     if not os.path.exists(os.path.join(TRAIN_DATA_DIR, 'all_inputs.pkl')) \
-        or not os.path.exists(os.path.join(TRAIN_DATA_DIR, 'all_labels.pkl')):
-	    get_all_raw_data()
-	    split_all_data_and_save()
+            or not os.path.exists(os.path.join(TRAIN_DATA_DIR,
+                                               'all_labels.pkl')):
+        get_all_raw_data()
+        split_all_data_and_save()
     split_train_dev_test_to_file()
 
 

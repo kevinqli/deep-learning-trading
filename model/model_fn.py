@@ -22,7 +22,7 @@ def build_model(mode, inputs, is_training, params):
     def lstm_cell():
         return tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units, forget_bias=1.0)
 
-    # Shallow LSTM model 
+    # Shallow LSTM model
     if params.model_version == 'lstm1':
         # Apply LSTM over the price features
         lstm_cell = tf.contrib.rnn.DropoutWrapper(lstm_cell(), output_keep_prob=(1.0 - params.dropout_rate))
@@ -31,7 +31,7 @@ def build_model(mode, inputs, is_training, params):
 
         # Compute logits from the output of the LSTM
         output = tf.layers.dense(output, 60, activation=tf.tanh, kernel_regularizer=tf.contrib.layers.l2_regularizer(params.l2_reg))
-        dropout = tf.layers.dropout(output, rate=params.dropout_rate, training=is_training) 
+        dropout = tf.layers.dropout(output, rate=params.dropout_rate, training=is_training)
         output2 = tf.layers.dense(dropout, 30, activation=tf.tanh, kernel_regularizer=tf.contrib.layers.l2_regularizer(params.l2_reg))
         output3 = tf.layers.dense(output2, 20, activation=tf.tanh, kernel_regularizer=tf.contrib.layers.l2_regularizer(params.l2_reg))
         logits = tf.layers.dense(output3, 1)
@@ -45,7 +45,34 @@ def build_model(mode, inputs, is_training, params):
 
         # Compute logits from the output of the LSTM
         output = tf.layers.dense(output, 60, activation=tf.tanh, kernel_regularizer=tf.contrib.layers.l2_regularizer(params.l2_reg))
-        dropout = tf.layers.dropout(output, rate=params.dropout_rate, training=is_training) 
+        dropout = tf.layers.dropout(output, rate=params.dropout_rate, training=is_training)
+        output2 = tf.layers.dense(dropout, 30, activation=tf.tanh, kernel_regularizer=tf.contrib.layers.l2_regularizer(params.l2_reg))
+        output3 = tf.layers.dense(output2, 20, activation=tf.tanh, kernel_regularizer=tf.contrib.layers.l2_regularizer(params.l2_reg))
+        logits = tf.layers.dense(output3, 1)
+
+    elif params.model_version == 'conv':
+        window_lengths = [3, 7, 11, 15, 19, 23, 27, 31, 35]
+        feature_maps = []
+        for wlength in window_lengths:
+            fmap = tf.layers.conv1d(
+                prices,
+                params.nb_filters,
+                wlength,
+                strides=1,
+                padding='same',
+                activation='relu',
+                kernel_regularizer=\
+                tf.contrib.layers.l2_regularizer(params.l2_reg))
+
+            if conv_dropout > 0.0:
+                fmap = tf.layers.dropout(fmap, rate=params.dropout)
+            feature_maps.append(fmap)
+
+
+        x = tf.concat(feature_maps, axis=-1)
+        x = tf.reduce_max(x, axis=1)
+        output = tf.layers.dense(x, 60, activation=tf.tanh, kernel_regularizer=tf.contrib.layers.l2_regularizer(params.l2_reg))
+        dropout = tf.layers.dropout(output, rate=params.dropout_rate, training=is_training)
         output2 = tf.layers.dense(dropout, 30, activation=tf.tanh, kernel_regularizer=tf.contrib.layers.l2_regularizer(params.l2_reg))
         output3 = tf.layers.dense(output2, 20, activation=tf.tanh, kernel_regularizer=tf.contrib.layers.l2_regularizer(params.l2_reg))
         logits = tf.layers.dense(output3, 1)
