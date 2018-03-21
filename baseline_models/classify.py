@@ -8,18 +8,18 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import accuracy_score
 
 DIR = '../data/'
-train_prices_path = DIR + 'train_prices.txt'
-train_deltas_path = DIR + 'train_deltas.txt'
-val_prices_path = DIR + 'val_prices.txt'
-val_deltas_path = DIR + 'val_deltas.txt'
+train_prices_path = DIR + 'train_inputs.pkl'
+train_deltas_path = DIR + 'train_labels.pkl'
+val_prices_path = DIR + 'val_inputs.pkl'
+val_deltas_path = DIR + 'val_labels.pkl'
 
 NUM_FEATURES = 30
 MODELS = ["RF", "RC", "GB"]
 
 # Return 3-d np array of inputs and 1-d np array of labels
 def get_inputs_and_labels():
-    return pickle.load(train_prices_path), pickle.load(train_deltas_path), 
-            pickle.load(val_prices_path), pickle.load(val_deltas_path)
+    return pickle.load(open(train_prices_path, 'rb')), pickle.load(open(train_deltas_path, 'rb')), \
+            pickle.load(open(val_prices_path, 'rb')), pickle.load(open(val_deltas_path, 'rb'))
 
 # Return trained RF classifier
 def random_forest_classifier(features, target):
@@ -39,7 +39,7 @@ def gradient_boosting_classifier(features, target):
     clf.fit(features, target)
     return clf
 
-# Output training and validation accuracies 
+# Output training and validation accuracies
 def train_model(X_train, y_train, X_val, y_val, model):
     if model == "RF":
         trained_model = random_forest_classifier(X_train, y_train)
@@ -74,4 +74,4 @@ if __name__ == '__main__':
     main()
 
 
-            
+
